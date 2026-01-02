@@ -57,18 +57,56 @@ A secure, feature-rich backend for personal finance management with advanced cyb
 
 ---
 
-Quick Start
-1. Clone the Repository
+# Fintech Cyber Backend
+
+> A production‑ready fintech backend with a strong cybersecurity focus. Built to handle secure authentication, fraud‑aware transaction processing, real‑time monitoring, and advanced financial analytics.
+
+---
+
+## Tech Stack
+
+| Category       | Tools / Technologies                                    |
+| -------------- | ------------------------------------------------------- |
+| Runtime        | Node.js (ES Modules)                                    |
+| Framework      | Express.js                                              |
+| Database       | PostgreSQL + Prisma ORM                                 |
+| Authentication | JWT (access & refresh tokens)                           |
+| Real‑time      | Socket.IO                                               |
+| Security       | Helmet, express‑rate‑limit, express‑mongo‑sanitize, HPP |
+| Logging        | Winston                                                 |
+| Validation     | express‑validator                                       |
+
+---
+
+## Prerequisites
+
+* Node.js **18+**
+* PostgreSQL **14+**
+* npm or yarn
+* Git
+
+---
+
+## Quick Start
+
+### 1. Clone the Repository
+
+```bash
 git clone <repository-url>
 cd fintech-cyber-backend
+```
 
-2. Install Dependencies
+### 2. Install Dependencies
+
+```bash
 npm install
+```
 
-3. Environment Variables
+### 3. Environment Variables
 
-Create a .env file based on .env.example:
+Create a `.env` file based on `.env.example`:
 
+```env
 NODE_ENV=development
 PORT=5000
 FRONTEND_URL=http://localhost:5173
@@ -81,25 +119,38 @@ BCRYPT_SALT_ROUNDS=12
 SECURITY_ALERT_THRESHOLD=70
 ENABLE_REALTIME_MONITORING=true
 LOG_LEVEL=info
+```
 
-4. Database Setup
+### 4. Database Setup
+
+```bash
 npx prisma generate
 npx prisma migrate dev --name init
 npm run seed # optional
+```
 
-5. Start the Server
-# Development
+### 5. Start the Server
+
+#### Development
+
+```bash
 npm run dev
+```
 
-# Production
+#### Production
+
+```bash
 npm start
+```
 
+Server runs at: **[http://localhost:5000](http://localhost:5000)**
 
-Server runs at: http://localhost:5000
+---
 
-Project Structure
+## Project Structure
+
+```text
 FINTECH-CYBER-BACKEND/
-│
 ├── middleware/                 # Authentication & security middleware
 ├── prisma/                     # Database schema & migrations
 ├── routes/                     # API route handlers
@@ -112,125 +163,172 @@ FINTECH-CYBER-BACKEND/
 │   ├── debts.js                # Debt management
 │   ├── recurringTransactions.js# Recurring payments
 │   └── transactionMoods.js     # Emotional spending tracking
-│
 ├── services/                   # Business logic
 ├── logs/                       # Application logs
-├── server.js                   # App entry point
+├── server.js                   # Application entry point
 ├── db.js                       # Database connection
 └── logger.js                   # Logging configuration
+```
 
-Security Features
-Authentication & Authorization
+---
 
-JWT authentication with refresh tokens
+## Security Features
 
-Role-based access control (Admin / User)
+### Authentication & Authorization
 
-Token blacklisting (immediate revocation)
+* JWT‑based authentication with refresh tokens
+* Role‑based access control (Admin / User)
+* Token blacklisting for immediate revocation
+* Rate limiting on sensitive endpoints
 
-Rate limiting on sensitive endpoints
+### Data Protection
 
-Data Protection
+* Input validation & sanitization
+* SQL injection prevention
+* XSS protection via Helmet
+* Secure CORS configuration
+* Password hashing using bcrypt
 
-Input validation & sanitization
+### Monitoring & Detection
 
-SQL injection prevention
+* Real‑time transaction monitoring
+* Spending anomaly detection
+* Suspicious login tracking
+* IP‑based location analysis
+* Security event logging & audit trails
 
-XSS protection via Helmet
+---
 
-Secure CORS configuration
+## Database Schema (Key Models)
 
-Password hashing with bcrypt
+| Model                    | Description                                                               |
+| ------------------------ | ------------------------------------------------------------------------- |
+| **User**                 | Authentication data, login tracking, trusted locations, security metadata |
+| **Transaction**          | Amount, category, timestamp, fraud flags, risk score, review status       |
+| **Budget**               | Spending limits with rollover support                                     |
+| **FinancialGoal**        | Target amount, progress tracking, deadlines                               |
+| **SecurityLog**          | Security events and audit trails                                          |
+| **TransactionMood**      | Emotional context and spending correlation                                |
+| **RecurringTransaction** | Scheduling rules and automated execution                                  |
+| **Debt**                 | Loan and credit tracking, interest and balances                           |
 
-Monitoring & Detection
+---
 
-Real-time transaction monitoring
+## API Endpoints
 
-Spending anomaly detection
+### Authentication (`/api/auth`)
 
-Suspicious login tracking
+| Method | Endpoint    | Description          | Notes              |
+| ------ | ----------- | -------------------- | ------------------ |
+| POST   | `/register` | Register new user    | JWT issued         |
+| POST   | `/login`    | User login           | Rate‑limited       |
+| POST   | `/logout`   | Logout user          | Token blacklisting |
+| POST   | `/refresh`  | Refresh access token | —                  |
+| GET    | `/profile`  | Get user profile     | —                  |
 
-IP-based location analysis
+---
 
-Security event logging & audit trails
+### Transactions (`/api/transactions`)
 
-Database Schema (Key Models)
-Model	Description
-User	Auth data, login tracking, trusted locations, security metadata
-Transaction	Amount, category, timestamp, fraud flags, risk score
-Budget	Spending limits with rollover support
-FinancialGoal	Target amount, progress tracking, deadlines
-SecurityLog	Security events & audit trails
-TransactionMood	Emotional context & spending correlation
-RecurringTransaction	Scheduling rules & automation
-Debt	Loans, credit balances, interest tracking
-API Endpoints
-Authentication (/api/auth)
-Method	Endpoint	Description	Notes
-POST	/register	Register new user	JWT issued
-POST	/login	User login	Rate-limited
-POST	/logout	Logout	Token blacklist
-POST	/refresh	Refresh access token	
-GET	/profile	Get user profile	
-Transactions (/api/transactions)
-Method	Endpoint	Description
-GET	/	Get all transactions
-POST	/	Create transaction + fraud check
-GET	/flagged	Get flagged transactions
-GET	/summary	Summary by timeframe
-PATCH	/:id/review	Mark as reviewed
-Analytics (/api/analytics)
-Method	Endpoint	Description
-GET	/comprehensive	Full financial analysis
-GET	/cash-flow	Cash flow analysis
-GET	/forecast	Spending predictions
-GET	/income-streams	Income diversification
-Budgets (/api/budgets)
-Method	Endpoint	Description
-GET	/	Get budgets
-POST	/	Create budget
-PUT	/:id	Update budget
-GET	/overview	Performance overview
-Security (/api/security)
-Method	Endpoint	Description
-GET	/events	Security events
-GET	/summary	Risk assessment
-POST	/alerts	Alert configuration
-Development
-Testing
+| Method | Endpoint      | Description                         |
+| ------ | ------------- | ----------------------------------- |
+| GET    | `/`           | Get all user transactions           |
+| POST   | `/`           | Create transaction with fraud check |
+| GET    | `/flagged`    | Get flagged transactions            |
+| GET    | `/summary`    | Summary by timeframe                |
+| PATCH  | `/:id/review` | Mark transaction as reviewed        |
+
+---
+
+### Analytics (`/api/analytics`)
+
+| Method | Endpoint          | Description                     |
+| ------ | ----------------- | ------------------------------- |
+| GET    | `/comprehensive`  | Full financial analysis         |
+| GET    | `/cash-flow`      | Cash flow analysis              |
+| GET    | `/forecast`       | Spending predictions            |
+| GET    | `/income-streams` | Income diversification analysis |
+
+---
+
+### Budgets (`/api/budgets`)
+
+| Method | Endpoint    | Description                 |
+| ------ | ----------- | --------------------------- |
+| GET    | `/`         | Get all budgets             |
+| POST   | `/`         | Create new budget           |
+| PUT    | `/:id`      | Update budget               |
+| GET    | `/overview` | Budget performance overview |
+
+---
+
+### Security (`/api/security`)
+
+| Method | Endpoint   | Description                 |
+| ------ | ---------- | --------------------------- |
+| GET    | `/events`  | Get security events         |
+| GET    | `/summary` | Security risk assessment    |
+| POST   | `/alerts`  | Configure alert preferences |
+
+---
+
+## Development
+
+### Testing
+
+```bash
 npm test
+```
 
+Tests are implemented using **Jest** and **Supertest**.
 
-Tests implemented using Jest & Supertest
+### Database Management
 
-Database Management
+```bash
 npx prisma generate
 npx prisma migrate dev --name migration_name
 npx prisma migrate reset
 npx prisma studio
+```
 
-Logging
+### Logging
 
-Logs stored in /logs
+* Logs stored in `/logs`
+* Structured JSON logs in production
+* Colored console logs in development
 
-JSON logs in production
+---
 
-Colored console logs in development
+## Real‑Time Features
 
-Deployment
-Production Checklist
+* Live transaction notifications
+* Security alert broadcasting
+* Budget threshold warnings
+* Goal progress updates
 
-Secure environment variables
+---
 
-Production PostgreSQL
+## Performance Monitoring
 
-HTTPS enabled
+* Health check endpoint: `GET /health`
+* Real‑time monitoring via Socket.IO
+* Structured logging & database connection pooling
 
-Monitoring & alerting
+---
 
-Regular backups
+## Deployment
 
-Docker Example
+### Production Considerations
+
+* Secure all environment variables
+* Use a production PostgreSQL instance
+* Enable HTTPS
+* Set up monitoring and alerts
+* Schedule regular database backups
+
+### Docker Example
+
+```dockerfile
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -239,48 +337,32 @@ COPY . .
 RUN npx prisma generate
 EXPOSE 5000
 CMD ["npm", "start"]
+```
 
-Real-Time Features
+---
 
-Live transaction notifications
+## Contributing
 
-Security alert broadcasting
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to your fork
+5. Open a Pull Request
 
-Budget threshold warnings
+---
 
-Goal progress updates
+## License
 
-Performance Monitoring
+MIT License — see the `LICENSE` file for details.
 
-Health check: GET /health
+---
 
-Socket.IO real-time monitoring
+## Support
 
-Structured logging & DB pooling
+* Check existing issues
+* Review documentation
+* Create a detailed issue report if needed
 
-Contributing
+---
 
-Fork the repository
-
-Create a feature branch
-
-Commit changes
-
-Push to your fork
-
-Open a Pull Request
-
-License
-
-MIT License — see LICENSE
-
-Support
-
-Check existing issues
-
-Review documentation
-
-Open a detailed issue report
-
-Note: This is a production-grade fintech backend with a strong cybersecurity focus.
-Ensure proper security configuration before deploying to production.
+> **Note:** This backend is designed with fintech‑grade security in mind. Always review and harden configuration before deploying to production.
