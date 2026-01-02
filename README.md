@@ -1,136 +1,110 @@
 # finance-tracker-backend
 
-A secure, feature-rich backend application for personal finance management with advanced cybersecurity features and real-time monitoring.
+A secure, feature-rich backend for personal finance management with advanced cybersecurity features and real-time monitoring.
 
- Features
-Core Financial Features
-Transaction Management: Track income and expenses with detailed categorization
+---
 
-Budget Planning: Set and monitor budgets with rollover capabilities
+## Features
 
-Financial Goals: Save for specific targets with progress tracking
+### Core Financial
+| Feature                  | Description                               |
+|---------------------------|-------------------------------------------|
+| Transactions              | Track income and expenses with categories |
+| Budgets                   | Set and monitor budgets with rollover     |
+| Financial Goals           | Save and track progress                   |
+| Debt Management           | Track loans and credit cards              |
+| Recurring Transactions    | Automate regular payments                 |
 
-Debt Management: Track loans, credit cards, and other debts
+### Advanced Analytics
+| Feature                  | Description                                |
+|---------------------------|--------------------------------------------|
+| Financial Analysis        | Multi-dimensional insights                  |
+| Cash Flow                 | Daily/weekly/monthly tracking               |
+| Spending Forecasting      | AI-powered predictions                      |
+| Income Streams            | Diversification & reliability assessment   |
+| Transaction Mood Tracking | Correlate spending with emotions           |
 
-Recurring Transactions: Automate regular income and expenses
+### Cybersecurity
+| Feature                   | Description                                  |
+|----------------------------|---------------------------------------------|
+| Fraud Detection            | Real-time anomaly monitoring                |
+| User Behavior Analytics    | Login patterns and location tracking        |
+| Security Event Monitoring  | Suspicious activity alerts                  |
+| Rate Limiting & Protection | DDoS and brute force protection             |
+| Token Management           | JWT with blacklisting                        |
 
-Advanced Analytics
-Comprehensive Financial Analysis: Multi-dimensional spending insights
+---
 
-Cash Flow Analysis: Daily/weekly/monthly cash flow tracking
+## Tech Stack
+| Category       | Tools/Technologies                                     |
+|----------------|-------------------------------------------------------|
+| Runtime        | Node.js (ES Modules)                                  |
+| Framework      | Express.js                                           |
+| Database       | PostgreSQL with Prisma ORM                            |
+| Authentication | JWT with refresh tokens                               |
+| Real-time      | Socket.IO                                            |
+| Security       | Helmet, express-rate-limit, express-mongo-sanitize, hpp |
+| Logging        | Winston                                              |
+| Validation     | express-validator                                    |
 
-Spending Forecasting: AI-powered expense predictions
+---
 
-Income Stream Analysis: Diversification and reliability assessment
+## Prerequisites
+- Node.js 18+  
+- PostgreSQL 14+  
+- npm or yarn  
+- Git  
 
-Transaction Mood Tracking: Emotional correlation with spending habits
+---
 
-Cybersecurity Features
-Real-time Fraud Detection: Anomaly detection in transactions
+## Quick Start
 
-User Behavior Analytics: Login patterns and location tracking
-
-Security Event Monitoring: Suspicious activity alerts
-
-Rate Limiting & Protection: DDoS and brute force protection
-
-Token Management: JWT with blacklisting capabilities
-
-Technical Features
-Real-time Updates: Socket.IO for live notifications
-
-Comprehensive Logging: Structured logging with Winston
-
-API Documentation: Well-documented REST endpoints
-
-Security Middleware: Helmet, CORS, rate limiting, input sanitization
-
-Database Integration: Prisma ORM with PostgreSQL
-
-Tech Stack
-Runtime: Node.js (ES Modules)
-
-Framework: Express.js
-
-Database: PostgreSQL with Prisma ORM
-
-Authentication: JWT with refresh tokens
-
-Real-time: Socket.IO
-
-Security: Helmet, express-rate-limit, express-mongo-sanitize, hpp
-
-Logging: Winston with structured logging
-
-Validation: express-validator
-
- Prerequisites
-Node.js 18+
-
-PostgreSQL 14+
-
-npm or yarn
-
-Git
-
- Quick Start
-1. Clone the Repository
-bash
+### 1. Clone Repository
+```sh
 git clone <repository-url>
 cd fintech-cyber-backend
 2. Install Dependencies
-bash
+sh
+Copy code
 npm install
 3. Set Up Environment Variables
 Create a .env file based on .env.example:
 
-bash
-# Environment
+sh
+Copy code
 NODE_ENV=development
-
-# Server
 PORT=5000
 FRONTEND_URL=http://localhost:5173
-
-# Database
 DATABASE_URL="postgresql://username:password@localhost:5432/fintech_cyber?sslmode=require"
-
-# Security
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 BCRYPT_SALT_ROUNDS=12
-
-# Enhanced Security
 SECURITY_ALERT_THRESHOLD=70
 ENABLE_REALTIME_MONITORING=true
-
-# Logging
 LOG_LEVEL=info
 4. Set Up Database
-bash
-# Generate Prisma client
+sh
+Copy code
 npx prisma generate
-
-# Run migrations
 npx prisma migrate dev --name init
-
-# Seed database (optional)
-npm run seed
+npm run seed # optional
 5. Start the Server
-bash
+sh
+Copy code
 # Development
 npm run dev
 
 # Production
 npm start
-The server will start at http://localhost:5000
+Server runs at http://localhost:5000.
 
- Project Structure
-text
+Project Structure
+bash
+Copy code
 FINTECH-CYBER-BACKEND/
-├── middleware/          # Authentication and security middleware
-├── prisma/             # Database schema and migrations
+├── middleware/          # Authentication & security middleware
+├── prisma/             # Database schema & migrations
 ├── routes/             # API route handlers
-│   ├── auth.js         # Authentication routes
+│   ├── auth.js         # Authentication & user routes
 │   ├── transactions.js # Transaction management
 │   ├── analytics.js    # Financial analytics
 │   ├── budgets.js      # Budget management
@@ -138,22 +112,21 @@ FINTECH-CYBER-BACKEND/
 │   ├── security.js     # Security monitoring
 │   ├── debts.js        # Debt management
 │   ├── recurringTransactions.js # Recurring payments
-│   └── transactionMoods.js # Emotional spending tracking
-├── services/           # Business logic and services
+│   └── transactionMoods.js     # Emotional spending tracking
+├── services/           # Business logic
 ├── logs/               # Application logs
-├── server.js           # Main application entry point
-├── db.js              # Database connection
-└── logger.js          # Logging configuration
-
- Security Features
+├── server.js           # Main entry point
+├── db.js               # Database connection
+└── logger.js           # Logging config
+Security Features
 Authentication & Authorization
-JWT-based authentication with refresh token rotation
+JWT-based authentication with refresh tokens
 
-Role-based access control (Admin/User)
+Role-based access (Admin/User)
 
-Token blacklisting for immediate revocation
+Token blacklisting
 
-Rate limiting on authentication endpoints
+Rate limiting on auth endpoints
 
 Data Protection
 Input sanitization and validation
@@ -162,7 +135,7 @@ SQL injection prevention
 
 XSS protection via Helmet
 
-CORS configuration for controlled access
+CORS configuration
 
 Password hashing with bcrypt
 
@@ -171,120 +144,80 @@ Real-time transaction monitoring
 
 Anomaly detection in spending patterns
 
-Suspicious login attempt tracking
+Suspicious login tracking
 
 IP-based location analysis
 
 Security event logging
 
- Database Schema
-Key Models
-User: Enhanced with cybersecurity fields (login tracking, trusted locations)
+Database Schema (Key Models)
+Model	Purpose
+User	Enhanced with cybersecurity fields
+Transaction	Fraud detection fields
+Budget	Rollover & spending limits
+FinancialGoal	Progress tracking
+SecurityLog	Audit trail
+TransactionMood	Emotional correlation
+RecurringTransaction	Automated scheduling
+Debt	Loan & credit management
 
-Transaction: Fraud detection fields (flagged, riskScore, fraudReason)
+API Endpoints
+Method	Endpoint	Description	Notes
+POST	/api/auth/register	Register new user	JWT issued after register
+POST	/api/auth/login	User login with security tracking	Rate-limited
+POST	/api/auth/logout	Invalidate session	Token blacklisting
+POST	/api/auth/refresh	Refresh access token	
+GET	/api/auth/profile	Get user profile	
+GET	/api/transactions/	Get all user transactions	
+POST	/api/transactions/	Create transaction with fraud check	
+GET	/api/transactions/flagged	Get flagged/suspicious transactions	
+GET	/api/transactions/summary	Transaction summary by timeframe	
+PATCH	/api/transactions/:id/review	Mark transaction as reviewed	
+GET	/api/analytics/comprehensive	Complete financial analysis	
+GET	/api/analytics/cash-flow	Cash flow analysis	
+GET	/api/analytics/forecast	Spending predictions	
+GET	/api/analytics/income-streams	Income diversification analysis	
+GET	/api/budgets/	Get all budgets	
+POST	/api/budgets/	Create new budget	
+PUT	/api/budgets/:id	Update budget	
+GET	/api/budgets/overview	Budget performance overview	
+GET	/api/security/events	Get security events	
+GET	/api/security/summary	Security risk assessment	
+POST	/api/security/alerts	Configure alert preferences	
 
-Budget: Rollover capabilities and spending limits
-
-FinancialGoal: Progress tracking with deadlines
-
-SecurityLog: Audit trail for security events
-
-TransactionMood: Emotional correlation with spending
-
-RecurringTransaction: Automated transaction scheduling
-
-Debt: Loan and credit management
-
- API Endpoints
-Authentication (/api/auth)
-POST /register - Register new user
-
-POST /login - User login with security tracking
-
-POST /logout - Invalidate session
-
-POST /refresh - Refresh access token
-
-GET /profile - Get user profile
-
-Transactions (/api/transactions)
-GET / - Get all user transactions
-
-POST / - Create new transaction with fraud detection
-
-GET /flagged - Get flagged/suspicious transactions
-
-GET /summary - Transaction summary by timeframe
-
-PATCH /:id/review - Mark transaction as reviewed
-
-Analytics (/api/analytics)
-GET /comprehensive - Complete financial analysis
-
-GET /cash-flow - Cash flow analysis
-
-GET /forecast - Spending predictions
-
-GET /income-streams - Income diversification analysis
-
-Budgets (/api/budgets)
-GET / - Get all budgets
-
-POST / - Create new budget
-
-PUT /:id - Update budget
-
-GET /overview - Budget performance overview
-
-Security (/api/security)
-GET /events - Get security events
-
-GET /summary - Security risk assessment
-
-POST /alerts - Configure alert preferences
-
- Development
+Development
 Running Tests
-bash
-# To be implemented
+sh
+Copy code
+# Tests will be implemented using Jest & Supertest
 npm test
 Database Management
-bash
-# Generate Prisma client
+sh
+Copy code
 npx prisma generate
-
-# Create migration
 npx prisma migrate dev --name migration_name
-
-# Reset database
 npx prisma migrate reset
-
-# Open Prisma Studio
 npx prisma studio
 Logging
-Logs are stored in /logs/ directory
+Logs in /logs/
 
-Separate logs for errors, combined logs, and authentication
+Structured JSON in production, colored console in dev
 
-Structured JSON format in production
-
-Colored console output in development
-
- Deployment
+Deployment
 Production Considerations
-Environment Variables: Update all sensitive variables
+Update all sensitive environment variables
 
-Database: Use production PostgreSQL instance
+Use production PostgreSQL
 
-HTTPS: Enable SSL/TLS for all endpoints
+Enable HTTPS
 
-Monitoring: Set up application monitoring
+Set up monitoring
 
-Backups: Regular database backups
+Regular database backups
 
-Docker (Recommended for Production)
+Docker Example
 dockerfile
-# Example Dockerfile
+Copy code
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -293,51 +226,27 @@ COPY . .
 RUN npx prisma generate
 EXPOSE 5000
 CMD ["npm", "start"]
-
- Security Best Practices
-Secrets Management: Never commit .env files
-
-Regular Updates: Keep dependencies updated
-
-Database Security: Use strong passwords and SSL
-
-Rate Limiting: Configure appropriate limits
-
-Monitoring: Regular review of security logs
-
 Contributing
-Fork the repository
+Fork repo → feature branch → commit → push → Pull Request
 
-Create a feature branch
+License
+MIT License – see LICENSE file
 
-Commit changes with descriptive messages
-
-Push to the branch
-
-Open a Pull Request
-
- License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
- Support
-For issues and questions:
-
+Support
 Check existing issues
 
 Review documentation
 
-Create a detailed issue report
+Create detailed issue report
 
- Performance Monitoring
-Built-in health check endpoint: GET /health
+Performance Monitoring
+Health check endpoint: GET /health
 
 Real-time monitoring via Socket.IO
 
-Structured logging for performance analysis
+Structured logging & database connection pooling
 
-Database connection pooling
-
- Real-time Features
+Real-time Features
 Live transaction notifications
 
 Security alert broadcasting
@@ -346,6 +255,4 @@ Budget threshold warnings
 
 Goal progress updates
 
-Note: This is a production-ready backend with cybersecurity focus. Ensure proper security measures are in place before deploying to production environments.
-
-
+Note: Production-ready backend with cybersecurity focus. Ensure proper security measures before deploying.
