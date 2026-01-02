@@ -60,15 +60,15 @@ A secure, feature-rich backend for personal finance management with advanced cyb
 ## Quick Start
 
 ### 1. Clone Repository
-```sh
+
 git clone <repository-url>
 cd fintech-cyber-backend
 
-2. Install Dependencies
+### 2. Install Dependencies
 
 npm install
 
-3. Set Up Environment Variables
+### 3. Set Up Environment Variables
 Create a .env file based on .env.example:
 
 NODE_ENV=development
@@ -81,13 +81,13 @@ SECURITY_ALERT_THRESHOLD=70
 ENABLE_REALTIME_MONITORING=true
 LOG_LEVEL=info
 
-4. Set Up Database
+### 4. Set Up Database
 
 npx prisma generate
 npx prisma migrate dev --name init
 npm run seed # optional
 
-5. Start the Server
+### 5. Start the Server
 
 # Development
 npm run dev
@@ -96,102 +96,130 @@ npm run dev
 npm start
 Server runs at http://localhost:5000.
 
-Project Structure
+---
 
-FINTECH-CYBER-BACKEND/
-├── middleware/          # Authentication & security middleware
-├── prisma/             # Database schema & migrations
-├── routes/             # API route handlers
-│   ├── auth.js         # Authentication & user routes
-│   ├── transactions.js # Transaction management
-│   ├── analytics.js    # Financial analytics
-│   ├── budgets.js      # Budget management
-│   ├── goals.js        # Financial goals
-│   ├── security.js     # Security monitoring
-│   ├── debts.js        # Debt management
-│   ├── recurringTransactions.js # Recurring payments
-│   └── transactionMoods.js     # Emotional spending tracking
-├── services/           # Business logic
-├── logs/               # Application logs
-├── server.js           # Main entry point
-├── db.js               # Database connection
-└── logger.js           # Logging configuration
+## Project Structure
 
- Security Features
-Category	Features
-Authentication & Authorization	• JWT-based authentication with refresh tokens
+|FINTECH-CYBER-BACKEND/                                          |
+|-----------------------------------------------------------------|
+|├── middleware/          # Authentication & security middleware |
+|├── prisma/             # Database schema & migrations          |
+|├── routes/             # API route handlers                    |
+|│   ├── auth.js         # Authentication & user routes          |
+|│   ├── transactions.js # Transaction management                |
+|│   ├── analytics.js    # Financial analytics                   |
+|│   ├── budgets.js      # Budget management                     |
+|│   ├── goals.js        # Financial goals                       |
+|│   ├── security.js     # Security monitoring                   |
+|│   ├── debts.js        # Debt management                       |
+|│   ├── recurringTransactions.js # Recurring payments           |
+|│   └── transactionMoods.js     # Emotional spending tracking   |
+|├── services/           # Business logic                        |
+|├── logs/               # Application logs                      |
+|├── server.js           # Main entry point                      |
+|├── db.js               # Database connection                   |
+|└── logger.js           # Logging configuration                 |
+
+---
+
+ ## Security Features
+
+### Authentication & Authorization	
+• JWT-based authentication with refresh tokens
 • Role-based access control (Admin/User)
 • Token blacklisting for immediate revocation
 • Rate limiting on authentication endpoints
-Data Protection	• Input sanitization and validation
+
+### Data Protection	
+• Input sanitization and validation
 • SQL injection prevention
 • XSS protection via Helmet
 • Secure CORS configuration
 • Password hashing with bcrypt
-Monitoring & Detection	• Real-time transaction monitoring
+
+### Monitoring & Detection	
+• Real-time transaction monitoring
 • Anomaly detection in spending patterns
 • Suspicious login attempt tracking
 • IP-based location analysis
 • Security event logging and audit trails
 
-  Database Schema (Key Models)
-Model	Key Fields
-User	Authentication fields, Login tracking, Trusted locations, Security metadata
-Transaction	Amount, category, timestamp, Fraud flags, risk score, Fraud reason, review status
-Budget	Spending limits, Rollover support
-FinancialGoal	Target amount, Progress tracking, Deadlines
-SecurityLog	Security events, Risk indicators, Audit trail
-TransactionMood	Emotional context, Spending correlation
-RecurringTransaction	Scheduling rules, Automated execution
-Debt	Loan and credit tracking, Interest and balances
+---
 
- API Endpoints
+  ## Database Schema (Key Models)
+
+Model	                 Key Fields
+
+User	                 Authentication fields, Login tracking, Trusted locations, Security metadata
+Transaction	             Amount, category, timestamp, Fraud flags, risk score, Fraud reason, review status
+Budget	                 Spending limits, Rollover support
+FinancialGoal	         Target amount, Progress tracking, Deadlines
+SecurityLog	             Security events, Risk indicators, Audit trail
+TransactionMood	         Emotional context, Spending correlation
+RecurringTransaction	 Scheduling rules, Automated execution
+Debt	                 Loan and credit tracking, Interest and balances
+
+---
+
+ ## API Endpoints
+
 
 Authentication (/api/auth)
-Method	Endpoint	Description	Notes
-POST	/api/auth/register	Register new user	JWT issued after register
-POST	/api/auth/login	User login with security tracking	Rate-limited
-POST	/api/auth/logout	Invalidate session	Token blacklisting
-POST	/api/auth/refresh	Refresh access token	
-GET	/api/auth/profile	Get user profile	
+
+Method	Endpoint	                    Description	                          Notes
+
+POST	/api/auth/register	            Register new user	                  JWT issued after register
+POST	/api/auth/login	                User login with security tracking	  Rate-limited
+POST	/api/auth/logout	            Invalidate session	                  Token blacklisting
+POST	/api/auth/refresh	            Refresh access token	
+GET	    /api/auth/profile	            Get user profile	
 
 Transactions (/api/transactions)
-Method	Endpoint	Description	Notes
-GET	/api/transactions/	Get all user transactions	
-POST	/api/transactions/	Create transaction with fraud check	
-GET	/api/transactions/flagged	Get flagged transactions	
-GET	/api/transactions/summary	Transaction summary by timeframe	
-PATCH	/api/transactions/:id/review	Mark transaction as reviewed	
+
+Method	  Endpoint	                    Description	
+
+GET	      /api/transactions/	        Get all user transactions	
+POST	  /api/transactions/	        Create transaction with fraud check	
+GET	      /api/transactions/flagged	    Get flagged transactions	
+GET	      /api/transactions/summary	    Transaction summary by timeframe	
+PATCH	  /api/transactions/:id/review	Mark transaction as reviewed	
 
 Analytics (/api/analytics)
-Method	Endpoint	Description	Notes
-GET	/api/analytics/comprehensive	Complete financial analysis	
-GET	/api/analytics/cash-flow	Cash flow analysis	
-GET	/api/analytics/forecast	Spending predictions	
-GET	/api/analytics/income-streams	Income diversification analysis	
+
+Method	Endpoint	                    Description	                  
+
+GET	    /api/analytics/comprehensive	Complete financial analysis	
+GET	    /api/analytics/cash-flow	    Cash flow analysis	
+GET	    /api/analytics/forecast	        Spending predictions	
+GET	    /api/analytics/income-streams	Income diversification analysis	
 
 Budgets (/api/budgets)
-Method	Endpoint	Description	Notes
-GET	/api/budgets/	Get all budgets	
-POST	/api/budgets/	Create new budget	
-PUT	/api/budgets/:id	Update budget	
-GET	/api/budgets/overview	Budget performance overview	
+
+Method	Endpoint	                    Description	     
+
+GET	    /api/budgets/	                Get all budgets	
+POST	/api/budgets/	                Create new budget	
+PUT	    /api/budgets/:id	            Update budget	
+GET	    /api/budgets/overview	        Budget performance overview	
 
 Security (/api/security)
-Method	Endpoint	Description	Notes
-GET	/api/security/events	Get security events	
-GET	/api/security/summary	Security risk assessment	
-POST	/api/security/alerts	Configure alert preferences	
 
+Method	Endpoint	                    Description	   
 
-Development
+GET	    /api/security/events	        Get security events	
+GET	    /api/security/summary	        Security risk assessment	
+POST	/api/security/alerts	        Configure alert preferences	
+
+---
+
+## Development
 
 Running Tests
 
 # Tests will be implemented using Jest & Supertest
 npm test
 
-Database Management
+### Database Management
 
 npx prisma generate
 npx prisma migrate dev --name migration_name
