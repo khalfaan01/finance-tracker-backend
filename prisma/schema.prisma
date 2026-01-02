@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //  CYBERSECURITY FIELDS - LOGIN TRACKING
+  lastLogin        DateTime? // Last successful login timestamp
+  lastLoginIP      String? // IP address of last login
+  lastLoginCity    String? // City from GeoIP
+  lastLoginCountry String? // Country from GeoIP
+  loginAttempts    Int       @default(0)
+  lockedUntil      DateTime?
+
+  //  NEW SECURITY FIELDS 
+  isVerified          Boolean  @default(false)
+  twoFactorSecret     String?
+  trustedLocations    Json? // Store array of trusted locations
+  securityPreferences Json? // Store alert preferences
+  typicalLoginHours   String[] // Array of typical login hours
+  knownIPs            String[] // Trusted IP addresses
+  lastUserAgent       String? // Last browser/device used
+  alertEmailEnabled   Boolean  @default(true)
+
+  accounts              Account[]
+  securityLogs          SecurityLog[]
+  budgets               Budget[]
+  goals                 FinancialGoal[]
+  securityEvents        SecurityEvent[]
+  transactionMoods      TransactionMood[]
+  recurringTransactions RecurringTransaction[]
+  debts                 Debt[]
+}
+
+model Account {
+  id                    Int                    @id @default(autoincrement())
+  userId                Int
+  name                  String
+  balance               Float
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  accountId   Int
+  amount      Float
+  type        String
+  category    String
+  date        DateTime
+  description String?
+
+  // 🔐 CYBERSECURITY FIELDS - FRAUD DETECTION
+  flagged     Boolean @default(false)
+  fraudReason String?
+  riskScore   Int     @default(0)
+  reviewed    Boolean @default(false)
+
+  // NEW FIELDS FOR ENHANCED FEATURES
+  isRecurring            Boolean @default(false) // If this was created from a recurring template
+  recurringTransactionId Int? // Link to the recurring template
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  // NEW RELATION for mood tracking
+  mood TransactionMood?
+
+  @@index([date])
+  @@index([category])
+  @@index([type, date])
+}
+
+//  OPTIONAL: Add for enhanced security logging
+model SecurityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String // "login", "login_failed", "transaction_flagged"
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
+  details   String? // Additional context like "5x average amount"
+  riskScore Int?     @default(0) // ADD THIS LINE - risk assessment 0-100
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id       Int    @id @default(autoincrement())
+  userId   Int
+  category String
+  limit    Float
+  spent    Float  @default(0)
+  period   String @default("monthly") // monthly, weekly, yearly
+
+  // NEW FIELDS
+  rolloverType   String  @default("none") // none, full, partial, capped
+  rolloverAmount Float   @default(0) // For partial percentage or cap amount
+  isActive       Boolean @default(true)
+  allowExceed    Boolean @default(false) // Hard block vs soft warning
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinancialGoal {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      DateTime
+  category      String   @default("savings") // emergency, vacation, investment, debt, etc.
+  importance    Int      @default(3) // Scale of 1-5
+
+  // NEW FIELDS
+  allocationPercentage Float? // % of income to auto-allocate
+  isActive             Boolean   @default(true)
+  isCompleted          Boolean   @default(false)
+  completedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SecurityEvent {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  type       String // 'suspicious_transaction', 'unusual_login', 'high_risk_activity'
+  severity   String // 'low', 'medium', 'high', 'critical'
+  title      String
+  message    String
+  metadata   Json? // Additional context data
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([severity])
+}
+
+model TransactionMood {
+  id            Int     @id @default(autoincrement())
+  transactionId Int     @unique
+  userId        Int
+  mood          String // "happy", "stressed", "bored", "impulsive", "planned"
+  notes         String? // Optional notes about the spending
+  intensity     Int     @default(5) // 1-10 scale of emotional intensity
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId, userId]) // composite unique constraint
+  @@index([userId, mood])
+  @@index([createdAt])
+}
+
+model RecurringTransaction {
+  id          Int     @id @default(autoincrement())
+  userId      Int
+  accountId   Int
+  amount      Float
+  type        String // "income", "expense"
+  category    String
+  description String?
+
+  // Recurrence settings
+  frequency String // "daily", "weekly", "monthly", "yearly"
+  interval  Int       @default(1) // Every X frequency units
+  startDate DateTime
+  endDate   DateTime?
+  lastRun   DateTime? // When it was last processed
+
+  // Automation settings
+  isActive    Boolean @default(true)
+  autoApprove Boolean @default(false) // Auto-create without review
+
+  // Additional fields for better tracking
+  nextRunDate DateTime // When it should run next
+  totalRuns   Int      @default(0) // How many times it has run
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([nextRunDate])
+  @@index([frequency])
+}
+
+model Debt {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  name           String // "Car Loan", "Credit Card", "Mortgage"
+  type           String // "loan", "credit_card", "mortgage", "personal"
+  principal      Float // Original amount
+  balance        Float // Current remaining balance
+  interestRate   Float // Annual interest rate (e.g., 5.5 for 5.5%)
+  minimumPayment Float // Minimum monthly payment
+  startDate      DateTime // When the debt started
+  dueDate        DateTime? // Next payment due date
+  isActive       Boolean   @default(true)
+
+  // Payment schedule
+  termMonths   Int? // Total loan term in months
+  paymentsMade Int  @default(0) // Number of payments made
+
+  // Additional fields
+  lender        String? // Bank or lender name
+  accountNumber String?
+  notes         String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([dueDate])
+}
