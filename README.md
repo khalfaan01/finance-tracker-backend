@@ -57,36 +57,6 @@ A secure, feature-rich backend for personal finance management with advanced cyb
 
 ---
 
-# Fintech Cyber Backend
-
-> A production‑ready fintech backend with a strong cybersecurity focus. Built to handle secure authentication, fraud‑aware transaction processing, real‑time monitoring, and advanced financial analytics.
-
----
-
-## Tech Stack
-
-| Category       | Tools / Technologies                                    |
-| -------------- | ------------------------------------------------------- |
-| Runtime        | Node.js (ES Modules)                                    |
-| Framework      | Express.js                                              |
-| Database       | PostgreSQL + Prisma ORM                                 |
-| Authentication | JWT (access & refresh tokens)                           |
-| Real‑time      | Socket.IO                                               |
-| Security       | Helmet, express‑rate‑limit, express‑mongo‑sanitize, HPP |
-| Logging        | Winston                                                 |
-| Validation     | express‑validator                                       |
-
----
-
-## Prerequisites
-
-* Node.js **18+**
-* PostgreSQL **14+**
-* npm or yarn
-* Git
-
----
-
 ## Quick Start
 
 ### 1. Clone the Repository
