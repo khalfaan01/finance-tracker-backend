@@ -65,6 +65,31 @@ router.get("/", authenticateToken, async (req, res) => {
 });
 
 /**
+ * POST /budgets/sync - Synchronize budget spent amounts with transactions
+ * @route POST /budgets/sync
+ * @returns {Object} Synchronization results
+ */
+router.post("/sync", authenticateToken, async (req, res) => {
+  try {
+    const result = await budgetService.synchronizeBudgetSpent(req.user.userId);
+
+    logger.info("Budget synchronization completed", {
+      context: "budget",
+      userId: req.user.userId,
+      synchronizedCount: result.synchronized,
+    });
+
+    res.json(result);
+  } catch (error) {
+    logger.error("Budget synchronization failed", {
+      context: "budget",
+      userId: req.user.userId,
+      error: error.message,
+    });
+    res.status(500).json({ error: "Failed to synchronize budgets" });
+  }
+});
+/**
  * GET /budgets/summary - Get aggregated budget summary
  * @route GET /budgets/summary
  * @returns {Object} Budget summary with totals and status breakdown
@@ -304,16 +329,37 @@ router.post("/check-limit", authenticateToken, async (req, res) => {
       amountNumber
     );
 
+    // DEBUG: Add logging
+    console.log("Budget check result:", JSON.stringify(check, null, 2));
+
     logger.info("Budget limit check completed", {
       context: "budget",
       userId: req.user.userId,
       category: category,
       amount: amountNumber,
       isWithinLimit: check.isWithinLimit,
-      remainingBudget: check.remainingBudget,
+      allowed: check.allowed,
+      warning: check.warning,
+      budgetAllowExceed: check.budget?.allowExceed,
     });
 
-    res.json(check);
+    // Make sure the response includes all necessary fields
+    const response = {
+      allowed: check.allowed !== false, // Default to true
+      warning: check.warning,
+      budget: check.budget,
+      currentSpent: check.currentSpent,
+      wouldBeTotal: check.wouldBeTotal,
+      overspendAmount: check.overspendAmount,
+      suggestion: check.suggestion,
+      error: check.error,
+    };
+
+    if (check.budget) {
+      response.budget.allowExceed = check.budget.allowExceed || false;
+    }
+
+    res.json(response);
   } catch (error) {
     logger.error("Budget limit check failed", {
       context: "budget",
@@ -367,6 +413,35 @@ router.post("/reset-spent", authenticateToken, async (req, res) => {
       error: error.message,
     });
     res.status(500).json({ error: "Failed to reset spent amounts" });
+  }
+});
+
+/**
+ * GET /budgets/recommendations - Get smart budget recommendations
+ * @route GET /budgets/recommendations
+ * @returns {Object} Smart budget recommendations and insights
+ * @description Provides AI-powered budget suggestions based on spending patterns
+ */
+router.get("/recommendations", authenticateToken, async (req, res) => {
+  try {
+    const recommendations = await budgetService.getSmartBudgetRecommendations(
+      req.user.userId
+    );
+
+    logger.info("Generated smart budget recommendations", {
+      context: "budget",
+      userId: req.user.userId,
+      recommendationCount: recommendations.recommendations?.length || 0,
+    });
+
+    res.json(recommendations);
+  } catch (error) {
+    logger.error("Failed to generate budget recommendations", {
+      context: "budget",
+      userId: req.user.userId,
+      error: error.message,
+    });
+    res.status(500).json({ error: "Failed to generate recommendations" });
   }
 });
 

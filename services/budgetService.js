@@ -37,6 +37,75 @@ export class BudgetService {
   }
 
   /**
+   * Synchronize budget spent amounts with actual transactions
+   * @param {string|number} userId - User identifier
+   * @returns {Promise<Object>} Synchronization results
+   */
+  async synchronizeBudgetSpent(userId) {
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const budgets = await this.prisma.budget.findMany({
+        where: { userId, isActive: true },
+      });
+
+      const results = [];
+
+      for (const budget of budgets) {
+        // Calculate actual spent from transactions
+        const transactions = await this.prisma.transaction.aggregate({
+          where: {
+            account: { userId },
+            type: "expense",
+            category: budget.category,
+            date: { gte: startOfMonth },
+          },
+          _sum: {
+            amount: true,
+          },
+        });
+
+        const actualSpent = Math.abs(transactions._sum.amount || 0);
+
+        // Update if different
+        if (Math.abs(budget.spent - actualSpent) > 0.01) {
+          const updatedBudget = await this.prisma.budget.update({
+            where: { id: budget.id },
+            data: { spent: actualSpent },
+          });
+
+          results.push({
+            budgetId: budget.id,
+            category: budget.category,
+            previousSpent: budget.spent,
+            newSpent: actualSpent,
+            difference: actualSpent - budget.spent,
+          });
+
+          logger.info("Budget spent synchronized", {
+            userId,
+            budgetId: budget.id,
+            previousSpent: budget.spent,
+            newSpent: actualSpent,
+          });
+        }
+      }
+
+      return {
+        synchronized: results.length,
+        results,
+      };
+    } catch (error) {
+      logger.error("Failed to synchronize budget spent", {
+        userId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create new budget for a user
    * @param {Object} data - Budget data
    * @param {string|number} userId - User identifier
@@ -135,6 +204,85 @@ export class BudgetService {
       logger.error("Failed to update budget", {
         budgetId: id,
         userId,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update spent amount for all budgets when a transaction occurs
+   * Called from transaction service when transactions are created
+   * @param {string|number} userId - User identifier
+   * @param {string} category - Transaction category
+   * @param {number} amount - Transaction amount
+   * @param {string} type - Transaction type ('expense' or 'income')
+   * @returns {Promise<Array>} Updated budgets
+   */
+  async updateBudgetsForTransaction(userId, category, amount, type) {
+    try {
+      // Only update for expense transactions
+      if (type !== "expense") {
+        return [];
+      }
+
+      const absAmount = Math.abs(amount);
+      const now = new Date();
+
+      // Get active budgets for this category
+      const budgets = await this.prisma.budget.findMany({
+        where: {
+          userId,
+          category,
+          isActive: true,
+        },
+      });
+
+      const updatedBudgets = [];
+
+      for (const budget of budgets) {
+        // Check if transaction is within budget period
+        const periodStart = this.getPeriodStartDate(budget.period, now);
+
+        const updatedBudget = await this.prisma.budget.update({
+          where: { id: budget.id },
+          data: {
+            spent: {
+              increment: absAmount,
+            },
+          },
+        });
+
+        updatedBudgets.push(updatedBudget);
+
+        // Check if budget limit is exceeded and log warning
+        if (
+          updatedBudget.spent > updatedBudget.limit &&
+          !updatedBudget.allowExceed
+        ) {
+          logger.warn(`Budget limit exceeded for user ${userId}`, {
+            userId,
+            budgetId: budget.id,
+            category,
+            limit: budget.limit,
+            spent: updatedBudget.spent,
+            amount: absAmount,
+          });
+        }
+      }
+
+      logger.debug("Budgets updated for transaction", {
+        userId,
+        category,
+        amount: absAmount,
+        updatedCount: updatedBudgets.length,
+      });
+
+      return updatedBudgets;
+    } catch (error) {
+      logger.error("Failed to update budgets for transaction", {
+        userId,
+        category,
         error: error.message,
       });
       throw error;
@@ -545,13 +693,22 @@ export class BudgetService {
 
           return {
             allowed: false,
-            budget,
-            currentSpent,
-            wouldBeTotal,
-            overspendAmount,
+            budget: budget,
+            currentSpent: currentSpent,
+            wouldBeTotal: wouldBeTotal,
+            overspendAmount: overspendAmount,
             suggestion: `Reduce amount to ${(
               budget.limit - currentSpent
             ).toFixed(2)} or less`,
+            error: `Transaction would exceed ${budget.category} budget limit`,
+            details: {
+              budgetCategory: budget.category,
+              budgetLimit: budget.limit,
+              currentSpent: currentSpent,
+              transactionAmount: Math.abs(amount),
+              wouldBeTotal: wouldBeTotal,
+              overspendAmount: overspendAmount,
+            },
           };
         } else {
           logger.warn("Transaction exceeds budget but allowExceed is true", {
@@ -562,11 +719,15 @@ export class BudgetService {
 
           return {
             allowed: true,
-            budget,
+            budget: budget,
             warning: `This expense exceeds your ${
               budget.category
             } budget by $${overspendAmount.toFixed(2)}`,
             riskScore: 60,
+            details: {
+              overspendAmount: overspendAmount,
+              budgetLimit: budget.limit,
+            },
           };
         }
       }

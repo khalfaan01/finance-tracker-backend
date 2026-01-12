@@ -95,9 +95,11 @@ export class RecurringService {
     }
 
     const startDate = new Date(data.startDate);
-    if (startDate < new Date()) {
-      logger.warn("Start date in the past", { startDate });
-      throw new Error("Start date cannot be in the past");
+    const now = new Date();
+
+    if (startDate < new Date(now.getTime() - 5 * 60 * 1000)) {
+      logger.warn("Start date too far in the past", { startDate });
+      throw new Error("Start date cannot be more than 5 minutes in the past");
     }
 
     if (data.endDate && new Date(data.endDate) <= startDate) {

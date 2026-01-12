@@ -2,6 +2,7 @@
 // Service for managing financial transactions with fraud detection and budget enforcement
 import { PrismaClient } from "@prisma/client";
 import logger from "../logger.js";
+import { BudgetService } from "./budgetService.js";
 
 /**
  * Service for managing financial transactions with fraud detection, budget enforcement, and security logging
@@ -14,6 +15,7 @@ export class TransactionService {
    */
   constructor() {
     this.prisma = new PrismaClient();
+    this.budgetService = new BudgetService();
   }
 
   /**
@@ -131,7 +133,63 @@ export class TransactionService {
       // Create the transaction
       const transaction = await this.prisma.transaction.create({
         data: transactionData,
+        include: {
+          account: true,
+        },
       });
+
+      // Update budgets for expense transactions
+      if (data.type === "expense") {
+        try {
+          // Get the budget for this category
+          const budget = await this.prisma.budget.findFirst({
+            where: {
+              userId: userId,
+              category: data.category,
+              isActive: true,
+            },
+          });
+
+          if (budget) {
+            // Update the budget's spent amount
+            await this.prisma.budget.update({
+              where: { id: budget.id },
+              data: {
+                spent: {
+                  increment: Math.abs(data.amount),
+                },
+              },
+            });
+
+            logger.debug("Budget updated for transaction", {
+              transactionId: transaction.id,
+              userId: userId,
+              budgetId: budget.id,
+              category: data.category,
+              amount: Math.abs(data.amount),
+              newSpent: budget.spent + Math.abs(data.amount),
+            });
+          } else {
+            logger.debug("No active budget found for category", {
+              userId: userId,
+              category: data.category,
+            });
+          }
+
+          // Also call the budget service method for consistency
+          await this.budgetService.updateBudgetsForTransaction(
+            userId,
+            data.category,
+            Math.abs(data.amount),
+            data.type
+          );
+        } catch (budgetError) {
+          logger.error("Failed to update budgets for transaction", {
+            transactionId: transaction.id,
+            error: budgetError.message,
+          });
+        }
+      }
 
       logger.info(`Transaction created successfully: ${transaction.id}`, {
         transactionId: transaction.id,
@@ -144,6 +202,7 @@ export class TransactionService {
           ? "This transaction has been flagged for review"
           : null,
         fraudReason: fraudDetection.reason,
+        budgetWarning: budgetCheck.warning,
       };
     } catch (error) {
       logger.error(`Failed to create transaction: ${error.message}`, {
@@ -359,6 +418,20 @@ export class TransactionService {
     try {
       logger.info(`Updating transaction: ${id} for user: ${userId}`);
 
+      // Get existing transaction to know previous amount and category
+      const existingTransaction = await this.prisma.transaction.findFirst({
+        where: {
+          id: parseInt(id),
+          account: {
+            userId: userId,
+          },
+        },
+      });
+
+      if (!existingTransaction) {
+        throw new Error("Transaction not found");
+      }
+
       const updateData = {
         amount:
           data.type === "expense"
@@ -380,6 +453,51 @@ export class TransactionService {
         data: updateData,
       });
 
+      // Adjust budgets if category or amount changed for expense transactions
+      if (existingTransaction.type === "expense" && data.type === "expense") {
+        const oldAmount = Math.abs(existingTransaction.amount);
+        const newAmount = Math.abs(data.amount);
+        const oldCategory = existingTransaction.category;
+        const newCategory = data.category;
+
+        // If amount changed, adjust budgets
+        if (oldAmount !== newAmount || oldCategory !== newCategory) {
+          try {
+            // Remove old amount from old category budget
+            if (oldCategory !== newCategory) {
+              await this.budgetService.updateBudgetsForTransaction(
+                userId,
+                oldCategory,
+                -oldAmount, // Negative to remove
+                "expense"
+              );
+            }
+
+            // Add new amount to new category budget
+            await this.budgetService.updateBudgetsForTransaction(
+              userId,
+              newCategory,
+              newAmount,
+              "expense"
+            );
+
+            logger.debug("Budgets adjusted for updated transaction", {
+              transactionId: id,
+              userId,
+              oldAmount,
+              newAmount,
+              oldCategory,
+              newCategory,
+            });
+          } catch (budgetError) {
+            logger.error("Failed to adjust budgets for updated transaction", {
+              transactionId: id,
+              error: budgetError.message,
+            });
+          }
+        }
+      }
+
       logger.debug(`Transaction updated successfully: ${id}`);
       return transaction;
     } catch (error) {
@@ -392,7 +510,40 @@ export class TransactionService {
   }
 
   /**
-   * Delete a transaction
+   * Update budgets when transaction is created - CORRECTED VERSION
+   * @param {Object} transaction - Created transaction
+   * @param {number} userId - User ID (must be passed separately)
+   */
+  async updateBudgetsForTransaction(transaction, userId) {
+    try {
+      if (transaction.type === "expense") {
+        const actualUserId = userId || transaction.account?.userId;
+
+        if (!actualUserId) {
+          logger.warn("Cannot update budget: userId not available", {
+            transactionId: transaction.id,
+          });
+          return;
+        }
+
+        const budgetService = new BudgetService();
+        await budgetService.updateBudgetsForTransaction(
+          actualUserId,
+          transaction.category,
+          Math.abs(transaction.amount),
+          transaction.type
+        );
+      }
+    } catch (error) {
+      logger.warn("Failed to update budgets for transaction", {
+        transactionId: transaction.id,
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Delete a transaction and adjust budgets
    * @param {string} id - Transaction ID
    * @param {string} userId - User ID
    * @returns {Promise<Object>} Deleted transaction
@@ -401,7 +552,46 @@ export class TransactionService {
     try {
       logger.info(`Deleting transaction: ${id} for user: ${userId}`);
 
-      const transaction = await this.prisma.transaction.delete({
+      // Get transaction before deleting
+      const transaction = await this.prisma.transaction.findFirst({
+        where: {
+          id: parseInt(id),
+          account: {
+            userId: userId,
+          },
+        },
+      });
+
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+
+      // Remove amount from budgets if it was an expense
+      if (transaction.type === "expense") {
+        try {
+          await this.budgetService.updateBudgetsForTransaction(
+            userId,
+            transaction.category,
+            -Math.abs(transaction.amount), // Negative to remove
+            "expense"
+          );
+
+          logger.debug("Budgets adjusted for deleted transaction", {
+            transactionId: id,
+            userId,
+            category: transaction.category,
+            amount: Math.abs(transaction.amount),
+          });
+        } catch (budgetError) {
+          logger.error("Failed to adjust budgets for deleted transaction", {
+            transactionId: id,
+            error: budgetError.message,
+          });
+        }
+      }
+
+      // Now delete the transaction
+      const deletedTransaction = await this.prisma.transaction.delete({
         where: {
           id: parseInt(id),
           account: {
@@ -411,7 +601,7 @@ export class TransactionService {
       });
 
       logger.debug(`Transaction deleted successfully: ${id}`);
-      return transaction;
+      return deletedTransaction;
     } catch (error) {
       logger.error(`Failed to delete transaction: ${error.message}`, {
         transactionId: id,

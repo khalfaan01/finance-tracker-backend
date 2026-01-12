@@ -33,10 +33,17 @@ const server = createServer(app);
  */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { error: "Too many requests from this IP, please try again later." },
+  max: 500,
+  message: {
+    error: "Too many requests from this IP, please try again later.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  skip: (req) => {
+    // Skip rate limiting for specific high-frequency endpoints
+    return req.path.startsWith("/api/budgets/check-limit");
+  },
 });
 
 const moodLimiter = rateLimit({
@@ -51,6 +58,13 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { error: "Too many login attempts, please try again later." },
+});
+
+const budgetCheckLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: "Too many budget checks, please slow down." },
+  skipSuccessfulRequests: true,
 });
 
 /**
@@ -99,6 +113,10 @@ app.use((req, res, next) => {
 
   if (path.startsWith("/api/auth")) {
     return authLimiter(req, res, next);
+  }
+
+  if (path === "/api/budgets/check-limit") {
+    return budgetCheckLimiter(req, res, next);
   }
 
   return limiter(req, res, next);
